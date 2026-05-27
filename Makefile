@@ -12,13 +12,11 @@ INSTALL_PREFIX	= $(DESTDIR)/usr/local
 
 ###################################
 # Where to find libraries, and their header files.
-LIBPATHS	= -L/usr/local/lib
-INCLUDE		= -I/usr/local/include
 ifdef FFTW_PATH
 LIBPATHS	+= -L$(FFTW_PATH)/lib
 INCLUDE		+= -I$(FFTW_PATH)/include
 endif
-INCLUDE		+= -I/usr/include/pipewire-0.3 -I/usr/include/spa-0.2
+INCLUDE		+= $(shell pkg-config --cflags libpipewire-0.3)
 INCLUDE 	+= -I$(SRCDIR)
 
 ###################################
@@ -35,17 +33,17 @@ FFTW_LIB	= -lfftw3 -lfftw3f
 
 ###################################
 # Binaries
-FLEX	= flex
-LD	= gcc
-CC	= gcc
-CHMOD	= chmod
+FLEX	?= flex
+CC	?= gcc
+LD	:= $(CC)
+CHMOD	?= chmod
 
 ###################################
 # Flags
 CC_WARN		= -Wall -Wpointer-arith -Wshadow \
 -Wcast-align -Wwrite-strings -Wstrict-prototypes \
 -Wmissing-prototypes -Wmissing-declarations -Wnested-externs
-CC_STD          = -std=c99 -D_POSIX_C_SOURCE=200809L
+CC_STD          = -std=c99 -D_POSIX_C_SOURCE=200809L -D_GNU_SOURCE
 CC_FLAGS	= $(DEFINE) -O2 $(CC_STD) $(CFLAGS) $(CPPFLAGS)
 CC_FPIC		= -fPIC
 LD_SHARED	= -shared
@@ -88,12 +86,14 @@ BFLOGIC_EQ_OBJS = $(BUILDDIR)/bflogic_eq.fpic.o $(BUILDDIR)/emalloc.fpic.o $(BUI
 BIN_TARGETS	= $(BUILDDIR)/brutefir
 LIB_TARGETS	= $(BUILDDIR)/cli.bflogic $(BUILDDIR)/eq.bflogic $(BUILDDIR)/file.bfio
 # These targets requires libs that are less portable
-LIB_TARGETS	+= $(BUILDDIR)/alsa.bfio $(BUILDDIR)/jack.bfio $(BUILDDIR)/pipewire.bfio
+LIB_TARGETS	+= $(BUILDDIR)/alsa.bfio
+#LIB_TARGETS	+= $(BUILDDIR)/jack.bfio
+LIB_TARGETS	+= $(BUILDDIR)/pipewire.bfio
 
 ###################################
 # System-specific settings
 
-UNAME_M         = $(shell uname -m)
+#UNAME_M         = $(shell uname -m)
 
 ifeq ($(UNAME_M),i586)
 BRUTEFIR_OBJS	+= $(BRUTEFIR_SSE_OBJS)
