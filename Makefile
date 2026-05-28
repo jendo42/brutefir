@@ -8,7 +8,9 @@ LDFLAGS +=
 
 ###################################
 # Where to install
-INSTALL_PREFIX	= $(DESTDIR)/usr/local
+DESTDIR ?= "/usr/local"
+bindir ?= "/usr/bin"
+libdir ?= "/usr/lib"
 
 ###################################
 # Where to find libraries, and their header files.
@@ -161,9 +163,9 @@ $(BUILDDIR)/eq.bflogic: $(BFLOGIC_EQ_OBJS)
 	$(CHMOD) $(CHMOD_REMOVEX) $@
 
 install: $(BIN_TARGETS) $(LIB_TARGETS)
-	install -d $(INSTALL_PREFIX)/bin $(INSTALL_PREFIX)/lib/brutefir
-	install $(BIN_TARGETS) $(INSTALL_PREFIX)/bin
-	install $(LIB_TARGETS) $(INSTALL_PREFIX)/lib/brutefir
+	install -d $(DESTDIR)$(bindir) $(DESTDIR)$(libdir)/brutefir
+	install $(LIB_TARGETS) $(DESTDIR)$(libdir)/brutefir
+	install $(BIN_TARGETS) $(DESTDIR)$(bindir)
 
 clean:
 	rm -rf $(BUILDDIR)/bfconf_lexical.c $(BRUTEFIR_OBJS) $(BFIO_FILE_OBJS) $(BFLOGIC_CLI_OBJS) \
