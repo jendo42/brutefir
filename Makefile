@@ -71,6 +71,8 @@ BRUTEFIR_OBJS = \
 
 BRUTEFIR_SSE_OBJS = $(BUILDDIR)/convolver_xmm.o
 
+BRUTEFIR_NEON_OBJS = $(BUILDDIR)/convolver_neon.o
+
 BFIO_FILE_OBJS	= $(BUILDDIR)/bfio_file.fpic.o
 
 BFIO_ALSA_LIBS	= -lasound
@@ -95,20 +97,22 @@ LIB_TARGETS	+= $(BUILDDIR)/pipewire.bfio
 ###################################
 # System-specific settings
 
-#UNAME_M         = $(shell uname -m)
+CPU_DEFINES := $(shell $(CC) -dM -E - < /dev/null)
+HAS_NEON   := $(if $(findstring __ARM_NEON,$(CPU_DEFINES)),1,0)
+HAS_AARCH64:= $(if $(findstring __aarch64__,$(CPU_DEFINES)),1,0)
+HAS_SSE    := $(if $(findstring __SSE__,$(CPU_DEFINES)),1,0)
+HAS_SSE2   := $(if $(findstring __SSE2__,$(CPU_DEFINES)),1,0)
 
-ifeq ($(UNAME_M),i586)
+ifeq ($(HAS_SSE2),1)
 BRUTEFIR_OBJS	+= $(BRUTEFIR_SSE_OBJS)
-CC_FLAGS	+= -msse
-endif
-ifeq ($(UNAME_M),i686)
+CC_FLAGS		+= -msse2
+else ifeq ($(HAS_SSE),1)
 BRUTEFIR_OBJS	+= $(BRUTEFIR_SSE_OBJS)
-CC_FLAGS	+= -msse
+CC_FLAGS		+= -msse
+else ifeq ($(HAS_NEON),1)
+BRUTEFIR_OBJS	+= $(BRUTEFIR_NEON_OBJS)
 endif
-ifeq ($(UNAME_M),x86_64)
-BRUTEFIR_OBJS	+= $(BRUTEFIR_SSE_OBJS)
-CC_FLAGS	+= -msse
-endif
+
 BRUTEFIR_LIBS	+= -ldl
 LDMULTIPLEDEFS	= -Xlinker --allow-multiple-definition
 

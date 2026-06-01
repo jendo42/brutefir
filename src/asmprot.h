@@ -25,4 +25,16 @@ convolver_3dnow_convolve_add(void *input_cbuf,
                              void *output_cbuf,
                              int loop_counter);
 
+void
+convolver_neon32_convolve_add(void *input_cbuf,
+                             void *coeffs,
+                             void *output_cbuf,
+                             int loop_counter);
+
+void
+convolver_neon64_convolve_add(void *input_cbuf,
+                             void *coeffs,
+                             void *output_cbuf,
+                             int loop_counter);
+
 #endif

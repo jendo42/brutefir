@@ -37,9 +37,12 @@ static int realsize = 0;
 
 static int n_fft, n_fft2, fft_order;
 
-#define OPT_CODE_GCC   0
-#define OPT_CODE_SSE   1
-#define OPT_CODE_SSE2  2
+#define OPT_CODE_GCC    0
+#define OPT_CODE_SSE    1
+#define OPT_CODE_SSE2   2
+#define OPT_CODE_NEON32 3
+#define OPT_CODE_NEON64 4
+
 static int opt_code;
 
 #if defined(ARCH_X86) || defined(ARCH_X86_64)
@@ -84,7 +87,15 @@ decide_opt_code(void)
 static void
 decide_opt_code(void)
 {
+#ifdef __ARM_NEON
+    #ifdef __aarch64__
+        opt_code = OPT_CODE_NEON64;
+    #else
+        opt_code = OPT_CODE_NEON32;
+    #endif
+#else
     opt_code = OPT_CODE_GCC;
+#endif
 }
 #endif
 
@@ -267,6 +278,17 @@ convolver_convolve_add(void *input_cbuf,
 #ifdef __SSE2__
     case OPT_CODE_SSE2:
         convolver_sse2_convolve_add(input_cbuf, coeffs, output_cbuf,
+                                    n_fft >> 3);
+        break;
+#endif
+#elif defined(__ARM_NEON) || defined(__aarch64__)
+    case OPT_CODE_NEON32:                       /* float32 NEON kernel */
+        convolver_neon32_convolve_add(input_cbuf, coeffs, output_cbuf,
+                                   n_fft >> 3);
+        break;
+#if defined(__aarch64__)
+    case OPT_CODE_NEON64:                      /* float64 NEON kernel */
+        convolver_neon64_convolve_add(input_cbuf, coeffs, output_cbuf,
                                     n_fft >> 3);
         break;
 #endif
@@ -787,6 +809,24 @@ convolver_td_convolve(td_conv_t *tdc,
     }
 }
 
+static const char *opt_code_name(int code)
+{
+    switch (code) {
+        case OPT_CODE_GCC:
+            return "compiler internal";
+        case OPT_CODE_SSE:
+            return "SSE";
+        case OPT_CODE_SSE2:
+            return "SSE2";
+        case OPT_CODE_NEON32:
+            return "NEON (32-bit)";
+        case OPT_CODE_NEON64:
+            return "NEON (64-bit)";
+        default:
+            return "unknown";
+    }
+}
+
 bool
 convolver_init(const char config_filename[],
                int length,
@@ -797,6 +837,7 @@ convolver_init(const char config_filename[],
 
     realsize = _realsize;
     decide_opt_code();
+    pinfo("convolver_init with %s extensions\n", opt_code_name(opt_code));
 
     if (realsize != 4 && realsize != 8) {
         fprintf(stderr, "Invalid real size %d.\n", realsize);
