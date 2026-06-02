@@ -3319,6 +3319,17 @@ External scheduling priority for module \"%s\" is lower than %d.\n",
         efree(default_iodev[IO]);
     }
 
+#ifdef TIMESTAMP_NOT_CLOCK_CYCLE_COUNTER
+    struct timespec freq;
+    if (clock_getres(CLOCK_MONOTONIC, &freq) == 0) {
+        double total_res_sec = (double)freq.tv_sec + ((double)freq.tv_nsec / 1.0e9);
+        bfconf->cpu_mhz = 1.0 / (total_res_sec * 1000000);
+        pinfo("Got monotonic timer frequency: %.3f MHz\n", bfconf->cpu_mhz);
+    } else {
+        bfconf->cpu_mhz = 1000;
+        fprintf(stderr, "ERROR: Cannot get clock speed, timers for benchmarking will be unreliable.\n");
+    }
+#else
     /* estimate CPU clock rate */
     gettimeofday(&tv2, NULL);
     timestamp(&t2);
@@ -3332,10 +3343,6 @@ External scheduling priority for module \"%s\" is lower than %d.\n",
     bfconf->cpu_mhz = (double)
         ((long double)(t2 - t1) /
          (long double)(tv2.tv_sec * 1000000 + tv2.tv_usec));
-#ifdef TIMESTAMP_NOT_CLOCK_CYCLE_COUNTER
-    pinfo("Warning: no support for clock cycle counter on this platform.\n"
-          "  Timers for benchmarking may be unreliable.\n");
-#else
     pinfo("Estimated CPU clock rate is %.3f MHz. CPU count is %d.\n",
           bfconf->cpu_mhz, bfconf->n_cpus);
 #endif
