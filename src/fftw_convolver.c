@@ -89,7 +89,18 @@ decide_opt_code(void)
 {
 #ifdef __ARM_NEON
     #ifdef __aarch64__
-        opt_code = OPT_CODE_NEON64;
+        switch (realsize) {
+            case 4:
+                opt_code = OPT_CODE_NEON32;
+                break;
+            case 8:
+                opt_code = OPT_CODE_NEON64;
+                break;
+            default:
+                fprintf(stderr, "Horrible, unsupported float size, falling back to compiler opt\n");
+                opt_code = OPT_CODE_GCC;
+                break;
+        }
     #else
         opt_code = OPT_CODE_NEON32;
     #endif
