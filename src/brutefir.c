@@ -19,7 +19,7 @@
 #include "bfmod.h"
 
 #define PRESENTATION_STRING \
-"BruteFIR v1.1.2\n"
+"BruteFIR v1.1.2a\n"
 
 #define USAGE_STRING \
 "Usage: %s [-quiet] [-nodefault] [-daemon] [configuration file]\n"
