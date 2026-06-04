@@ -19,6 +19,7 @@ LIBPATHS	+= -L$(FFTW_PATH)/lib
 INCLUDE		+= -I$(FFTW_PATH)/include
 endif
 INCLUDE		+= $(shell pkg-config --cflags libpipewire-0.3)
+INCLUDE		+= $(shell pkg-config --cflags gstreamer-1.0 gstreamer-app-1.0 gstreamer-base-1.0)
 INCLUDE 	+= -I$(SRCDIR)
 
 ###################################
@@ -84,6 +85,9 @@ BFIO_JACK_OBJS	= $(BUILDDIR)/bfio_jack.fpic.o
 BFIO_PIPEWIRE_LIBS = -lpipewire-0.3
 BFIO_PIPEWIRE_OBJS = $(BUILDDIR)/bfio_pipewire.fpic.o $(BUILDDIR)/compat.fpic.o
 
+BFIO_GSTREAMER_LIBS = $(shell pkg-config --libs gstreamer-1.0 gstreamer-app-1.0 gstreamer-base-1.0)
+BFIO_GSTREAMER_OBJS = $(BUILDDIR)/bfio_gstreamer.fpic.o $(BUILDDIR)/compat.fpic.o
+
 BFLOGIC_CLI_OBJS = $(BUILDDIR)/bflogic_cli.fpic.o $(BUILDDIR)/compat.fpic.o
 BFLOGIC_EQ_OBJS = $(BUILDDIR)/bflogic_eq.fpic.o $(BUILDDIR)/emalloc.fpic.o $(BUILDDIR)/compat.fpic.o $(BUILDDIR)/shmalloc.fpic.o
 
@@ -93,6 +97,7 @@ LIB_TARGETS	= $(BUILDDIR)/cli.bflogic $(BUILDDIR)/eq.bflogic $(BUILDDIR)/file.bf
 LIB_TARGETS	+= $(BUILDDIR)/alsa.bfio
 #LIB_TARGETS	+= $(BUILDDIR)/jack.bfio
 LIB_TARGETS	+= $(BUILDDIR)/pipewire.bfio
+LIB_TARGETS += $(BUILDDIR)/gstreamer.bfio
 
 ###################################
 # System-specific settings
@@ -141,6 +146,10 @@ $(BUILDDIR)/%.c: $(SRCDIR)/%.lex | $(BUILDDIR)
 
 $(BUILDDIR)/brutefir: $(BRUTEFIR_OBJS)
 	$(CC) $(LDFLAGS) $(LIBPATHS) $(LDMULTIPLEDEFS) -o $@ $(BRUTEFIR_OBJS) $(BRUTEFIR_LIBS)
+
+$(BUILDDIR)/gstreamer.bfio: $(BFIO_GSTREAMER_OBJS)
+	$(LD) $(LD_SHARED) $(LDFLAGS) $(CC_FPIC) $(LIBPATHS) -o $@ $(BFIO_GSTREAMER_OBJS) $(BFIO_GSTREAMER_LIBS) -lc
+	$(CHMOD) $(CHMOD_REMOVEX) $@
 
 $(BUILDDIR)/alsa.bfio: $(BFIO_ALSA_OBJS)
 	$(LD) $(LD_SHARED) $(LDFLAGS) $(CC_FPIC) $(LIBPATHS) -o $@ $(BFIO_ALSA_OBJS) $(BFIO_ALSA_LIBS) -lc
