@@ -732,6 +732,24 @@ bfio_write(int fd,
     struct alsa_access_state *as = &glob.fd2as[fd];
     int frame_count, frame_size, err;
 
+    snd_pcm_sframes_t q;
+    static snd_pcm_sframes_t x[10];
+    static uint64_t p = 0;
+    if (snd_pcm_delay(as->handle, &q) < 0) {
+        q = -1;   /* frames queued in the ring */
+    }
+
+    int i = p++ % 10;
+    x[i] = q;
+    if (i == 0) {
+        uint64_t avg = 0;
+        for (i = 0; i < 10; i++) {
+            avg += x[i];
+        }
+        avg /= 10;
+        fprintf(stderr, "ALSA ring buffer state (period %lu): %lu", p, avg);
+    }
+
     if (as->isinterleaved) {
         frame_size = as->sample_size * as->open_channels;
         if (as->ismmap) {
