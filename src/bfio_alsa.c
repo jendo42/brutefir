@@ -358,6 +358,22 @@ set_params(snd_pcm_t *handle,
         return false;
     }
 
+    /* after snd_pcm_prepare(handle), before the stream is started */
+    #define PREFILL_PERIODS 7          /* 8 * 8192 / 352800 Hz ≈ 186 ms cushion */
+
+    /* Assuming 2 channels (stereo) based on your multiplier */
+    size_t frame_bytes = 2 * snd_pcm_format_physical_width(format) / 8;
+
+    void *silence = calloc(hw_period_size, frame_bytes);
+
+    for (int i = 0; i < PREFILL_PERIODS; i++) {
+        /* Swap out writei for mmap_writei */
+        if (snd_pcm_mmap_writei(handle, silence, hw_period_size) < 0)
+            break;                     /* not ready / would block */
+    }
+
+    free(silence);
+
     if (glob.debug) {
         snd_pcm_dump(handle, glob.out);
     }
